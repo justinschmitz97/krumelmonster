@@ -1,57 +1,46 @@
-console.log("Content script initialized: Auto Functional Cookies");
+const loadRulesFromStorage = async (): Promise<Record<string, string[]>> => {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: "getRules" }, (rules) => {
+      resolve(rules || {});
+    });
+  });
+};
 
-// Wait for the page to fully load
-document.addEventListener("DOMContentLoaded", () => {
-  const COOKIE_BANNER_SELECTORS = [
-    ".cookie-banner", // General classes
-    "#cookie-consent", // Specific IDs
-    "div[data-cookie]", // Attribute-based match
-  ];
-
-  const ESSENTIAL_BUTTON_SELECTORS = [
-    ".accept-essential", // Button classes for essential cookies
-    ".btn-functional", // Another example
-    `button:contains("Necessary")`, // Text-based detection
-  ];
+document.addEventListener("DOMContentLoaded", async () => {
+  const rules = await loadRulesFromStorage();
 
   const detectAndInteract = () => {
-    // Step 1: Detect banner
-    const banner = COOKIE_BANNER_SELECTORS.map((selector) =>
-      document.querySelector(selector)
-    ).find((el) => el !== null) as HTMLElement | null; // Ensure the result is a DOM element or null
+    const banner = rules.banners
+      .map((selector) => document.querySelector(selector))
+      .find((el) => el !== null) as HTMLElement | null;
 
     if (banner) {
-      console.log("Cookie banner detected:", banner);
+      console.log("Banner detected:", banner);
 
-      // Step 2: Find the appropriate button
-      const essentialButton = ESSENTIAL_BUTTON_SELECTORS.map((selector) =>
-        banner.querySelector(selector)
-      ).find((el) => el !== null) as HTMLElement | null; // Same typing fix for buttons
+      const acceptBtn = rules.accept
+        .map((selector) => banner.querySelector(selector))
+        .find((el) => el !== null) as HTMLElement | null;
 
-      if (essentialButton) {
-        console.log("Accepting essential cookies via", essentialButton);
-        essentialButton.click();
-
-        // Log success
-        chrome.runtime.sendMessage({
-          type: "bannerAccepted",
-          details: { url: window.location.href },
-        });
+      if (acceptBtn) {
+        console.log("Clicking accept button:", acceptBtn);
+        acceptBtn.click();
+        chrome.runtime.sendMessage({ type: "bannerAccepted" });
         return;
-      } else {
-        console.warn("No functional cookie button found!");
       }
-    } else {
-      console.warn("No cookie banner detected!");
-    }
 
-    // Log failure if no banner or button is found
-    chrome.runtime.sendMessage({
-      type: "bannerNotHandled",
-      details: { url: window.location.href },
-    });
+      const rejectBtn = rules.reject
+        .map((selector) => banner.querySelector(selector))
+        .find((el) => el !== null) as HTMLElement | null;
+
+      if (rejectBtn) {
+        console.log("Clicking reject button:", rejectBtn);
+        rejectBtn.click();
+        chrome.runtime.sendMessage({ type: "bannerRejected" });
+        return;
+      }
+    }
+    chrome.runtime.sendMessage({ type: "bannerNotHandled" });
   };
 
-  // Execute the above logic
   detectAndInteract();
 });

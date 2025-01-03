@@ -1,34 +1,44 @@
-chrome.runtime.onInstalled.addListener(() => {
-  // Create or schedule a recurring alarm
-  chrome.alarms.create("ruleUpdate", { periodInMinutes: 1440 }); // Once per day
-});
+const loadRules = async () => {
+  const files = [
+    chrome.runtime.getURL("rules/banners.txt"),
+    chrome.runtime.getURL("rules/accept-essential.txt"),
+    chrome.runtime.getURL("rules/reject-nonessential.txt"),
+  ];
 
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "ruleUpdate") {
-    fetchRuleUpdates();
-  }
-});
+  const rules: Record<string, string[]> = {
+    banners: [],
+    accept: [],
+    reject: [],
+  };
 
-// Fetch updated rules and store them
-const fetchRuleUpdates = async () => {
   try {
-    const response = await fetch("https://example.com/cookie-rules.json");
-    if (response.ok) {
-      const rules = await response.json();
-      await chrome.storage.local.set({ cookieRules: rules });
-      console.log("Successfully updated rules.");
+    // Fetch and load each rule file dynamically
+    for (const [index, fileURL] of files.entries()) {
+      const response = await fetch(fileURL);
+      const content = await response.text();
+      const key = Object.keys(rules)[index]; // Match rules keys to files
+      rules[key] = content.split("\n").filter((line) => line.trim() !== "");
     }
+
+    // Store rules in Chrome storage
+    chrome.storage.local.set({ cookieRules: rules });
+    console.log("Rules successfully loaded and stored:", rules);
   } catch (error) {
-    console.error("Failed to update rules:", error);
+    console.error("Failed to load or parse rule files:", error);
   }
 };
+
+// Run the rule loader on installation
+chrome.runtime.onInstalled.addListener(() => {
+  loadRules();
+});
 
 // Provide rules to content scripts on request
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "getRules") {
     chrome.storage.local.get("cookieRules", (data) => {
-      sendResponse(data.cookieRules || []);
+      sendResponse(data.cookieRules || {});
     });
-    return true; // Indicates async sendResponse
+    return true; // Indicates an async sendResponse is being used
   }
 });

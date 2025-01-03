@@ -1,0 +1,3 @@
+button.accept-functional
+.btn-functional
+button:contains('Necessary')

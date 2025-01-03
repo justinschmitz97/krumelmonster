@@ -1,0 +1,27 @@
+{
+  "rules": [
+    {
+      "id": "banner-detection",
+      "selectors": [".cookie-banner", "#cookie-consent", "div[data-cookie]"],
+      "description": "Detect common cookie banner elements on the page."
+    },
+    {
+      "id": "accept-functional",
+      "selectors": [
+        ".accept-essential",
+        ".btn-functional",
+        "button:contains(\"Necessary\")"
+      ],
+      "description": "Select buttons to accept only functional/necessary cookies."
+    },
+    {
+      "id": "reject-non-essential",
+      "selectors": [
+        ".reject-all",
+        ".decline-button",
+        "button:contains('Reject All')"
+      ],
+      "description": "Select buttons to reject all advertising/tracking cookies."
+    }
+  ]
+}
