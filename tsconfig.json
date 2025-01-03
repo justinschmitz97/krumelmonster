@@ -7,6 +7,9 @@
     "moduleResolution": "nodenext",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  }
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist", // Ensure TypeScript outputs compiled files in the same dist folder
+    "allowJs": true // Support JavaScript files if necessary for quick prototyping
+  },
+  "exclude": ["dist", "node_modules"] // Avoid these in build/validate
 }
